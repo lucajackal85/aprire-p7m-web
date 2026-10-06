@@ -1,0 +1,1055 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Aprire P7M</title>
+<script>
+// Web fonts only on the website: the Android app uses the system font (Roboto) and works fully offline.
+if (!window.Capacitor?.isNativePlatform?.()) for (const [rel, href, co] of [["preconnect","https://fonts.googleapis.com"],["preconnect","https://fonts.gstatic.com",1],["stylesheet","https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap"]]){
+  const l = document.createElement("link"); l.rel = rel; l.href = href; if (co) l.crossOrigin = ""; document.head.append(l);
+}
+</script>
+<style>
+/* Layout: one narrow column, phone first. Opening a file → the extracted document is one tap away; signers follow. */
+:root{
+  --bg:#F3F4F6; --surface:#FFFFFF; --ink:#18202B; --muted:#5D6675; --line:#DCE0E6;
+  --seal:#9E2B25; --seal-ink:#FFFFFF; --seal-soft:#F6E5E3; --ok:#22744A; --ok-soft:#E2F2E8; --warn:#8A5A00; --warn-soft:#FBF0D9;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161C; --surface:#1B2028; --ink:#E8EBF0; --muted:#9AA3B2; --line:#2C333E;
+  --seal:#E0675E; --seal-ink:#1A0A09; --seal-soft:#3A1F1D; --ok:#6BCB95; --ok-soft:#173226; --warn:#E8B85A; --warn-soft:#352A12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161C; --surface:#1B2028; --ink:#E8EBF0; --muted:#9AA3B2; --line:#2C333E;
+  --seal:#E0675E; --seal-ink:#1A0A09; --seal-soft:#3A1F1D; --ok:#6BCB95; --ok-soft:#173226; --warn:#E8B85A; --warn-soft:#352A12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body)}
+.wrap{max-width:720px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:grid;gap:16px}
+header{display:flex;align-items:center;gap:12px}
+.seal{width:44px;height:44px;flex:none;border-radius:50%;background:var(--seal);color:var(--seal-ink);display:grid;place-items:center;font:700 13px/1 var(--mono);letter-spacing:.02em;box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--seal-ink) 25%,transparent)}
+h1{font:700 clamp(26px,6vw,34px)/1.1 var(--display);margin:0;letter-spacing:-.01em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:14px}
+.drop{border:2px dashed var(--line);border-radius:14px;background:var(--surface);padding:16px;display:grid;gap:12px;justify-items:stretch;text-align:center;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--seal);background:var(--seal-soft)}
+.drop p{margin:0;color:var(--muted);font-size:14px}
+.drag-hint{display:none}
+.btn{appearance:none;border:0;border-radius:12px;padding:15px 18px;font:700 17px/1 var(--body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;width:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.98)}
+.btn:focus-visible{outline:3px solid var(--seal);outline-offset:2px}
+.primary{background:var(--seal);color:var(--seal-ink)}
+.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.notice{border-radius:10px;padding:10px 14px;font-size:14px}
+.notice.err{background:var(--seal-soft);color:var(--seal)}
+.notice.ok{background:var(--ok-soft);color:var(--ok)}
+.result{display:grid;gap:16px}
+.doc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
+.doc h2{font:600 20px/1.25 var(--display);margin:0;overflow-wrap:anywhere;text-wrap:balance}
+.meta{color:var(--muted);font:13px/1.4 var(--mono)}
+.actions{display:grid;gap:10px}
+.label{font:500 12px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 0 0}
+.signer{display:grid;gap:4px;padding:14px 0;border-top:1px solid var(--line)}
+.signer:first-of-type{border-top:0;padding-top:4px}
+.signer .who{font-weight:700;font-size:17px}
+.kv{display:grid;grid-template-columns:1fr;gap:0;font-size:15px}
+.kv dd{margin:0 0 8px}
+.kv dt{color:var(--muted);font-size:13px} .kv dd{min-width:0;overflow-wrap:anywhere}
+.mono{font-family:var(--mono);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font:500 12px/1 var(--mono);padding:5px 8px;border-radius:999px;background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.chip.good{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip.bad{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.stamps{display:grid;gap:8px}
+.stamps:empty{display:none}
+.stamp{display:grid;gap:6px;font-size:14px}
+.stamp .chips{margin-top:0}
+.trust-date{margin:8px 0 0;font-size:12px}
+footer{color:var(--muted);font-size:13px;line-height:1.5}
+footer p{margin:0 0 8px;max-width:65ch}
+/* Larger screens: buttons back to natural width, two-column details, drag & drop hint */
+@media (min-width:600px){
+  .wrap{padding-top:32px;gap:20px}
+  .drop{padding:22px 20px;justify-items:start;text-align:left}
+  .doc{padding:20px}
+  .btn{width:auto;min-height:48px;font-size:16px}
+  .actions{display:flex;flex-wrap:wrap}
+  .kv{grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}
+  .kv dt{font-size:inherit} .kv dd{margin:0}
+}
+@media (hover:hover) and (pointer:fine){.drag-hint{display:inline}}
+.ic{display:none;width:18px;height:18px;flex:none;fill:currentColor}
+.android-only{display:none}
+.lang{margin-left:auto;align-self:center;font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer}
+html.android .lang{background:transparent;color:var(--md-on-surface-variant);border:1px solid var(--md-outline-variant);border-radius:8px;height:36px;padding:0 8px;font:500 14px/20px Roboto,system-ui,sans-serif}
+.too-old .drop,.too-old #result,.too-old #msg{display:none!important}
+
+/* ===== Android app: Material Design 3 ===== */
+html.android{
+  --md-primary:#9C4135; --md-on-primary:#FFFFFF; --md-primary-container:#FFDAD5; --md-on-primary-container:#3F0402;
+  --md-surface:#FFF8F6; --md-surface-low:#FFF0EE; --md-surface-high:#F6E4E1; --md-on-surface:#231918; --md-on-surface-variant:#534341;
+  --md-outline:#857371; --md-outline-variant:#D8C2BE; --md-error-container:#FFDAD6; --md-on-error-container:#410002;
+  --md-inverse-surface:#392E2C; --md-inverse-on-surface:#FFEDEA; --md-inverse-primary:#FFB4A8;
+  --md-ok-container:#D4F5DD; --md-on-ok-container:#0D3B1E;
+}
+@media (prefers-color-scheme: dark){html.android{
+  --md-primary:#FFB4A8; --md-on-primary:#5F150E; --md-primary-container:#7E2A21; --md-on-primary-container:#FFDAD5;
+  --md-surface:#1A1110; --md-surface-low:#231918; --md-surface-high:#322826; --md-on-surface:#F1DFDC; --md-on-surface-variant:#D8C2BE;
+  --md-outline:#A08C89; --md-outline-variant:#534341; --md-error-container:#93000A; --md-on-error-container:#FFDAD6;
+  --md-inverse-surface:#F1DFDC; --md-inverse-on-surface:#392E2C; --md-inverse-primary:#9C4135;
+  --md-ok-container:#1F4D2E; --md-on-ok-container:#B6F2C6;
+}}
+html.android body{background:var(--md-surface);color:var(--md-on-surface);font:16px/24px Roboto,"Google Sans",system-ui,sans-serif;letter-spacing:.5px;-webkit-tap-highlight-color:transparent}
+html.android .android-only{display:inline}
+html.android .drag-hint{display:none}
+html.android .wrap{max-width:none;padding:0 16px 112px;gap:16px}
+/* Top app bar */
+html.android header{position:sticky;top:0;z-index:2;height:64px;margin:0 -16px;padding:0 16px;background:var(--md-surface)}
+html.android .seal,html.android .sub{display:none}
+html.android h1{font:400 22px/28px Roboto,"Google Sans",system-ui,sans-serif;letter-spacing:0}
+/* Empty state */
+html.android .drop{border:0;background:none;padding:48px 8px;text-align:center;justify-items:center}
+html.android body.has-result .drop{padding:0}
+html.android body.has-result .drop > :not(.fab){display:none}
+html.android .empty-title{display:block;margin:0;font:400 22px/28px Roboto,system-ui,sans-serif;color:var(--md-on-surface)}
+html.android .drop p{font-size:14px;line-height:20px;letter-spacing:.25px;color:var(--md-on-surface-variant);max-width:36ch}
+/* Buttons */
+html.android .ic{display:block}
+html.android .btn{position:relative;overflow:hidden;width:auto;min-height:40px;height:40px;padding:0 24px 0 16px;border-radius:20px;gap:8px;
+  font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;transform:none}
+html.android .btn::after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s}
+html.android .btn:active::after{opacity:.12}
+html.android .btn:focus-visible{outline:2px solid var(--md-primary);outline-offset:2px}
+html.android .primary{background:var(--md-primary);color:var(--md-on-primary)}
+html.android .ghost{background:transparent;color:var(--md-primary);border:1px solid var(--md-outline)}
+/* Extended FAB */
+html.android .fab{position:fixed;right:16px;bottom:16px;z-index:3;height:56px;min-height:56px;padding:0 20px 0 16px;border-radius:16px;gap:12px;
+  background:var(--md-primary-container);color:var(--md-on-primary-container);
+  box-shadow:0 1px 3px rgba(0,0,0,.3),0 4px 8px 3px rgba(0,0,0,.15)}
+html.android .fab .ic{width:24px;height:24px}
+/* Cards */
+html.android .result{gap:12px}
+html.android .doc{background:var(--md-surface);border:1px solid var(--md-outline-variant);border-radius:12px;padding:16px;gap:16px}
+html.android .label{font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;text-transform:none;color:var(--md-on-surface-variant);margin:0 0 4px}
+html.android .doc h2{font:400 22px/28px Roboto,system-ui,sans-serif;letter-spacing:0;color:var(--md-on-surface)}
+html.android .meta{font:400 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.25px;color:var(--md-on-surface-variant);margin-top:4px}
+html.android .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+html.android .actions .btn{width:100%}
+html.android #open{grid-column:1/-1}
+/* Signers as a list */
+html.android .signer{border-top-color:var(--md-outline-variant);padding:12px 0}
+html.android .signer:first-of-type{padding-top:0}
+html.android .signer .who{font:500 16px/24px Roboto,system-ui,sans-serif;letter-spacing:.15px}
+html.android .kv dt{font:500 12px/16px Roboto,system-ui,sans-serif;letter-spacing:.5px;color:var(--md-on-surface-variant)}
+html.android .kv dd{font-size:16px;line-height:24px;margin:0 0 12px;color:var(--md-on-surface)}
+html.android .mono{font-family:"Roboto Mono",ui-monospace,monospace;font-size:15px}
+html.android .chips{gap:8px}
+html.android .chip{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:8px;font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;
+  background:transparent;color:var(--md-on-surface-variant);border:1px solid var(--md-outline-variant)}
+html.android .chip.good{background:var(--md-ok-container);color:var(--md-on-ok-container);border-color:transparent}
+html.android .chip.bad{background:var(--md-error-container);color:var(--md-on-error-container);border-color:transparent}
+/* Messages */
+html.android .notice{border-radius:12px;padding:16px;font-size:14px;line-height:20px;letter-spacing:.25px}
+html.android .notice.err{background:var(--md-error-container);color:var(--md-on-error-container)}
+html.android #saveMsg{position:fixed;left:16px;right:16px;bottom:88px;z-index:4;border-radius:4px;padding:14px 16px;
+  background:var(--md-inverse-surface);color:var(--md-inverse-on-surface);box-shadow:0 1px 3px rgba(0,0,0,.3),0 4px 8px 3px rgba(0,0,0,.15)}
+html.android footer{font-size:12px;line-height:16px;letter-spacing:.4px;color:var(--md-on-surface-variant)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<script>
+// Old browsers / Android System WebView (before Chrome 80) cannot run the page: explain how to update
+// instead of showing a broken page. Written in ES5 on purpose, so that it runs everywhere.
+(function () {
+  var ok = true;
+  try { new Function("var a = {}; return a?.b ?? 1"); } catch (e) { ok = false; }
+  if (ok && !(window.Promise && window.TextDecoder && window.crypto)) ok = false;
+  if (ok) return;
+  document.documentElement.className += " too-old";
+  document.addEventListener("DOMContentLoaded", function () {
+    var inApp = / wv\)/.test(navigator.userAgent), l = "";
+    try { l = localStorage.getItem("lang") || ""; } catch (e) {}
+    var it = (l || (navigator.languages && navigator.languages[0]) || navigator.language || "").toLowerCase().indexOf("it") === 0;
+    var m = document.createElement("div");
+    m.id = "too-old"; m.className = "notice err";
+    m.textContent = inApp
+      ? (it ? "Questa app richiede una versione più recente di «Android System WebView». Aggiornala dal Play Store (insieme a Chrome), poi riapri l'app."
+            : "This app needs a newer version of “Android System WebView”. Update it from the Play Store (together with Chrome), then reopen the app.")
+      : (it ? "Il browser è troppo vecchio per questa pagina. Aggiornalo, oppure usa una versione recente di Chrome, Firefox, Safari o Edge."
+            : "This browser is too old for this page. Update it, or use a recent version of Chrome, Firefox, Safari or Edge.");
+    var w = document.querySelector(".wrap");
+    w.insertBefore(m, w.children[1] || null);
+  });
+})();
+</script>
+<script>if (window.Capacitor?.isNativePlatform?.()) document.documentElement.classList.add("android");</script>
+<div class="wrap">
+  <header>
+    <div class="seal" aria-hidden="true">P7M</div>
+    <div>
+      <h1>Aprire P7M</h1>
+      <p class="sub" data-i18n="sub">Estrai il documento originale da un file firmato digitalmente</p>
+    </div>
+    <select id="lang" class="lang" aria-label="Lingua / Language">
+      <option value="it">Italiano</option>
+      <option value="en">English</option>
+    </select>
+  </header>
+
+  <div class="drop" id="drop">
+    <p class="empty-title android-only" data-i18n="emptyTitle">Nessun file aperto</p>
+    <button class="btn primary fab" id="pick" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg><span data-i18n="pick">Scegli file .p7m</span></button>
+    <input type="file" id="file" hidden>
+    <p><span class="android-only" data-i18n="tapHint">Tocca «Scegli file .p7m» oppure apri un .p7m da Gmail, WhatsApp o Files. </span><span class="drag-hint" data-i18n="dragHint">Oppure trascinalo qui. </span><span data-i18n="local">Il file resta sul tuo dispositivo: niente viene caricato online.</span></p>
+  </div>
+
+  <div id="msg" class="notice" hidden></div>
+
+  <section class="result" id="result" hidden>
+    <div class="doc">
+      <div>
+        <div class="label" data-i18n="docLabel">Documento originale</div>
+        <h2 id="docName"></h2>
+        <div class="meta" id="docMeta"></div>
+        <div class="stamps" id="stamps"></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="open" type="button" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg><span data-i18n="open">Apri file</span></button>
+        <button class="btn ghost" id="share" type="button" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg><span data-i18n="share">Condividi</span></button>
+        <button class="btn primary" id="save" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg><span data-i18n="save">Scarica file</span></button>
+      </div>
+      <div class="notice ok" id="saveMsg" hidden></div>
+    </div>
+
+    <div class="doc">
+      <div class="label" id="signLabel">Firmato da</div>
+      <div id="signers"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p data-i18n="footer">Verifica che il documento non sia stato modificato dopo la firma, che il certificato sia stato emesso da un certificatore accreditato AgID e mostra chi ha firmato e quando. Non controlla la revoca dei certificati: per la validità legale servono strumenti ufficiali come quelli dei certificatori accreditati AgID.</p>
+    <p class="web-only" data-i18n="androidTip">Su Android: salva prima il .p7m dall'email o da WhatsApp, poi aprilo da qui con «Scegli file».</p>
+  </footer>
+</div>
+
+<script src="trusted-list.js"></script>
+<script>
+// ---- P7M core: BER parser + CMS SignedData unpacking (no dependencies) ----
+const P7M = (() => {
+  function parse(buf, pos, end) {
+    const start = pos;
+    if (pos + 2 > end) throw new Error("dati troncati");
+    const b0 = buf[pos++];
+    const cls = b0 >> 6, cons = !!(b0 & 0x20);
+    let tag = b0 & 0x1f;
+    if (tag === 0x1f) { tag = 0; let b; do { b = buf[pos++]; tag = tag * 128 + (b & 0x7f); } while (b & 0x80); }
+    let len = buf[pos++], indef = false;
+    if (len === 0x80) { indef = true; len = -1; }
+    else if (len & 0x80) {
+      const n = len & 0x7f; if (n > 6) throw new Error("lunghezza non valida");
+      len = 0; for (let i = 0; i < n; i++) len = len * 256 + buf[pos++];
+    }
+    const node = { cls, cons, tag, hdr: start, start: pos, end: 0, total: 0, kids: null };
+    if (indef) {
+      if (!cons) throw new Error("lunghezza indefinita su tipo primitivo");
+      node.kids = [];
+      while (true) {
+        if (pos + 2 > end) throw new Error("dati troncati");
+        if (buf[pos] === 0 && buf[pos + 1] === 0) { node.end = pos; node.total = pos + 2; break; }
+        const k = parse(buf, pos, end); node.kids.push(k); pos = k.total;
+      }
+    } else {
+      node.end = pos + len; node.total = node.end;
+      if (node.end > end) throw new Error("dati troncati");
+      if (cons) { node.kids = []; let p = pos; while (p < node.end) { const k = parse(buf, p, node.end); node.kids.push(k); p = k.total; } }
+    }
+    return node;
+  }
+  const bytes = (buf, n) => buf.subarray(n.start, n.end);
+  const raw = (buf, n) => buf.subarray(n.hdr, n.total);
+  function octets(buf, n) { // OCTET STRING, primitive or constructed
+    if (!n.cons) return bytes(buf, n);
+    const parts = []; let size = 0;
+    (function walk(x) { if (x.cons) x.kids.forEach(walk); else { const b = bytes(buf, x); parts.push(b); size += b.length; } })(n);
+    const out = new Uint8Array(size); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out;
+  }
+  function oid(buf, n) {
+    const b = bytes(buf, n); const out = []; let v = 0;
+    for (let i = 0; i < b.length; i++) { v = v * 128 + (b[i] & 0x7f); if (!(b[i] & 0x80)) { if (!out.length) { const f = Math.min(2, Math.floor(v / 40)); out.push(f, v - 40 * f); } else out.push(v); v = 0; } }
+    return out.join(".");
+  }
+  function str(buf, n) {
+    const b = bytes(buf, n);
+    if (n.tag === 30) { let s = ""; for (let i = 0; i + 1 < b.length; i += 2) s += String.fromCharCode(b[i] << 8 | b[i + 1]); return s; }
+    if (n.tag === 12 || n.tag === 19 || n.tag === 22 || n.tag === 20 || n.tag === 26) {
+      try { return new TextDecoder("utf-8", { fatal: n.tag === 12 }).decode(b); } catch { return new TextDecoder("latin1").decode(b); }
+    }
+    return new TextDecoder("latin1").decode(b);
+  }
+  function time(buf, n) {
+    const s = new TextDecoder().decode(bytes(buf, n));
+    const m = n.tag === 23 ? s.match(/^(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?Z$/) : s.match(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?(?:\.\d+)?Z$/);
+    if (!m) return null;
+    let y = +m[1]; if (n.tag === 23) y += y < 50 ? 2000 : 1900;
+    return new Date(Date.UTC(y, +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)));
+  }
+  const ATTR = { "2.5.4.3": "CN", "2.5.4.4": "SN", "2.5.4.42": "GN", "2.5.4.5": "serial", "2.5.4.6": "C", "2.5.4.10": "O", "2.5.4.11": "OU", "2.5.4.12": "T", "2.5.4.97": "orgId", "1.2.840.113549.1.9.1": "email" };
+  function name(buf, n) {
+    const o = {};
+    for (const rdn of n.kids || []) for (const atv of rdn.kids || []) {
+      const k = ATTR[oid(buf, atv.kids[0])]; if (k && !o[k]) o[k] = str(buf, atv.kids[1]);
+    }
+    return o;
+  }
+  const eq = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+  function cert(buf, n) {
+    const tbs = n.kids[0]; let i = 0;
+    if (tbs.kids[0].cls === 2 && tbs.kids[0].tag === 0) i = 1;
+    const serial = bytes(buf, tbs.kids[i]);
+    const issuer = tbs.kids[i + 2], validity = tbs.kids[i + 3], subject = tbs.kids[i + 4];
+    const c = { serial, issuerRaw: raw(buf, issuer), issuer: name(buf, issuer), subject: name(buf, subject),
+      from: time(buf, validity.kids[0]), to: time(buf, validity.kids[1]), ski: null, qualified: false, nonRep: false,
+      spki: raw(buf, tbs.kids[i + 5]).slice(), keyOid: oid(buf, tbs.kids[i + 5].kids[0].kids[0]),
+      curve: (() => { const p = tbs.kids[i + 5].kids[0].kids[1]; return p && p.tag === 6 ? oid(buf, p) : null; })(),
+      // what is needed to check that the issuer signed this certificate
+      subjectRaw: raw(buf, subject).slice(), tbsRaw: raw(buf, tbs).slice(), sigOid: oid(buf, n.kids[1].kids[0]),
+      sigParams: n.kids[1].kids[1] && n.kids[1].kids[1].cons ? raw(buf, n.kids[1].kids[1]).slice() : null,
+      sigValue: bytes(buf, n.kids[2]).slice(1), aki: null };
+    const ext = tbs.kids.find(k => k.cls === 2 && k.tag === 3);
+    if (ext) for (const e of ext.kids[0].kids) {
+      const id = oid(buf, e.kids[0]); const val = e.kids[e.kids.length - 1];
+      try {
+        if (id === "2.5.29.14") c.ski = bytes(buf, parse(buf, val.start, val.end));
+        if (id === "2.5.29.35") { const a = parse(buf, val.start, val.end).kids.find(k => k.cls === 2 && k.tag === 0); if (a) c.aki = bytes(buf, a).slice(); }
+        if (id === "2.5.29.15") { const bs = bytes(buf, parse(buf, val.start, val.end)); c.nonRep = bs.length > 1 && !!(bs[1] & 0x40); }
+        if (id === "1.3.6.1.5.5.7.1.3") { const s = parse(buf, val.start, val.end); c.qualified = (s.kids || []).some(q => oid(buf, q.kids[0]) === "0.4.0.1862.1.1"); }
+      } catch { }
+    }
+    return c;
+  }
+  const SIGNED_DATA = "1.2.840.113549.1.7.2";
+  function decodeText(u8) { // base64 / PEM fallback
+    const t = new TextDecoder("latin1").decode(u8.subarray(0, Math.min(u8.length, 200)));
+    if (!/^[\s\-A-Za-z0-9+/=]+/.test(t) || !/MI|BEGIN/.test(t)) return null;
+    const s = new TextDecoder("latin1").decode(u8).replace(/-----[^-]+-----/g, "").replace(/[^A-Za-z0-9+/=]/g, "");
+    try { const b = atob(s); const o = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) o[i] = b.charCodeAt(i); return o; } catch { return null; }
+  }
+  const TIMESTAMP_TOKEN = "1.2.840.113549.1.9.16.2.14";
+  /** RFC 3161 TimeStampToken (a SignedData around TSTInfo): certified time and the authority that issued it. */
+  function timestamp(token) {
+    const r = unwrapOnce(token);
+    if (!r || !r.content) return null;
+    const tst = parse(r.content, 0, r.content.length);
+    const gen = tst.kids.find(k => k.cls === 0 && k.tag === 24);
+    const tsaCert = r.signers[0] && r.signers[0].cert;
+    let authority = tsaCert ? (tsaCert.subject.CN || tsaCert.subject.O) : null;
+    const tsaName = tst.kids.find(k => k.cls === 2 && k.tag === 0); // [0] GeneralName, directoryName [4]
+    if (!authority && tsaName && tsaName.kids[0] && tsaName.kids[0].tag === 4) { const n = name(r.content, tsaName.kids[0].kids[0]); authority = n.CN || n.O || null; }
+    const mi = tst.kids[2]; // messageImprint: { hashAlgorithm, hashedMessage } = hash of the signature value
+    return gen ? { time: time(r.content, gen), authority, signer: r.signers[0] || null,
+      imprintOid: oid(r.content, mi.kids[0].kids[0]), imprint: bytes(r.content, mi.kids[1]).slice() } : null;
+  }
+  function unwrapOnce(buf) {
+    let root;
+    try { root = parse(buf, 0, buf.length); } catch { return null; }
+    if (!root.kids || root.kids.length < 2 || root.kids[0].tag !== 6 || oid(buf, root.kids[0]) !== SIGNED_DATA) return null;
+    const sd = root.kids[1].kids[0];
+    const eci = sd.kids[2];
+    let content = null;
+    if (eci.kids[1]) content = octets(buf, eci.kids[1].kids[0]);
+    const certs = [];
+    const certNode = sd.kids.find((k, i) => i > 2 && k.cls === 2 && k.tag === 0);
+    if (certNode) for (const c of certNode.kids) if (c.tag === 16) { try { certs.push(cert(buf, c)); } catch { } }
+    const signerSet = sd.kids[sd.kids.length - 1];
+    const signers = [];
+    for (const si of signerSet.kids || []) {
+      const s = { cert: null, time: null, tsa: null };
+      const sid = si.kids[1];
+      if (sid.tag === 16) { const iss = raw(buf, sid.kids[0]), ser = bytes(buf, sid.kids[1]); s.cert = certs.find(c => eq(c.serial, ser) && eq(c.issuerRaw, iss)) || null; }
+      else { const k = bytes(buf, sid); s.cert = certs.find(c => c.ski && eq(c.ski, k)) || null; }
+      const sa = si.kids.find(k => k.cls === 2 && k.tag === 0);
+      if (sa) for (const a of sa.kids) { if (oid(buf, a.kids[0]) === "1.2.840.113549.1.9.5") s.time = time(buf, a.kids[1].kids[0]); }
+      // Verification data. SignerInfo: version, sid, digestAlgorithm, [0] signedAttrs?, signatureAlgorithm, signature, [1]?
+      const sigIdx = si.kids.indexOf(sa) > 0 ? si.kids.indexOf(sa) + 1 : 3;
+      const sigAlg = si.kids[sigIdx];
+      s.v = { digestOid: oid(buf, si.kids[2].kids[0]), sigOid: oid(buf, sigAlg.kids[0]), sigParams: sigAlg.kids[1] && sigAlg.kids[1].cons ? raw(buf, sigAlg.kids[1]).slice() : null,
+        signature: bytes(buf, si.kids[sigIdx + 1]).slice(), signedAttrs: null, md: null };
+      if (sa) {
+        s.v.signedAttrs = raw(buf, sa).slice(); s.v.signedAttrs[0] = 0x31; // signed as a SET OF, not as [0] IMPLICIT
+        for (const a of sa.kids) if (oid(buf, a.kids[0]) === "1.2.840.113549.1.9.4") s.v.md = bytes(buf, a.kids[1].kids[0]).slice();
+      }
+      const ua = si.kids.find(k => k.cls === 2 && k.tag === 1); // unsigned attributes: CAdES-T timestamp
+      if (ua) for (const a of ua.kids) { if (oid(buf, a.kids[0]) === TIMESTAMP_TOKEN) { try { s.tsa = timestamp(raw(buf, a.kids[1].kids[0])); } catch { } } }
+      if (!s.cert && certs.length === 1) s.cert = certs[0];
+      signers.push(s);
+    }
+    for (const s of signers) { s.content = content; s.certs = certs; }
+    return { content, signers };
+  }
+  // ---- Signature verification (WebCrypto, on device) ----
+  const HASH = { "1.3.14.3.2.26": "SHA-1", "2.16.840.1.101.3.4.2.1": "SHA-256", "2.16.840.1.101.3.4.2.2": "SHA-384", "2.16.840.1.101.3.4.2.3": "SHA-512" };
+  const RSA_SIG = { "1.2.840.113549.1.1.1": null, "1.2.840.113549.1.1.5": "SHA-1", "1.2.840.113549.1.1.11": "SHA-256", "1.2.840.113549.1.1.12": "SHA-384", "1.2.840.113549.1.1.13": "SHA-512" };
+  const EC_SIG = { "1.2.840.10045.2.1": null, "1.2.840.10045.4.1": "SHA-1", "1.2.840.10045.4.3.2": "SHA-256", "1.2.840.10045.4.3.3": "SHA-384", "1.2.840.10045.4.3.4": "SHA-512" };
+  const CURVE = { "1.2.840.10045.3.1.7": ["P-256", 32], "1.3.132.0.34": ["P-384", 48], "1.3.132.0.35": ["P-521", 66] };
+  const RSA_PSS = "1.2.840.113549.1.1.10";
+  function ecdsaRaw(der, size) { // DER SEQUENCE { r, s } -> r || s, as WebCrypto expects
+    const seq = parse(der, 0, der.length), out = new Uint8Array(size * 2);
+    seq.kids.forEach((k, i) => { let b = bytes(der, k); while (b.length > size && b[0] === 0) b = b.subarray(1); out.set(b, i * size + size - b.length); });
+    return out;
+  }
+  function pssParams(der, fallbackHash) { // RSASSA-PSS-params: [0] hashAlgorithm, [2] saltLength (default SHA-1 / 20)
+    const r = { hash: "SHA-1", salt: 20 };
+    if (!der) return { hash: fallbackHash, salt: 32 };
+    const seq = parse(der, 0, der.length);
+    for (const k of seq.kids || []) {
+      if (k.cls === 2 && k.tag === 0) r.hash = HASH[oid(der, k.kids[0].kids[0])] || r.hash;
+      if (k.cls === 2 && k.tag === 2) { const b = bytes(der, k.kids[0]); r.salt = b.reduce((a, x) => a * 256 + x, 0); }
+    }
+    return r;
+  }
+  /** Checks one signature over `data`; resolves true/false, or null when the algorithm is not supported. */
+  async function verifySignature(cert, v, hash, data) {
+    const subtle = crypto.subtle;
+    try {
+      if (v.sigOid in RSA_SIG) {
+        const h = RSA_SIG[v.sigOid] || hash, alg = { name: "RSASSA-PKCS1-v1_5", hash: h };
+        const key = await subtle.importKey("spki", cert.spki, alg, false, ["verify"]);
+        return await subtle.verify(alg, key, v.signature, data);
+      }
+      if (v.sigOid === RSA_PSS) {
+        const p = pssParams(v.sigParams, hash);
+        const key = await subtle.importKey("spki", cert.spki, { name: "RSA-PSS", hash: p.hash }, false, ["verify"]);
+        return await subtle.verify({ name: "RSA-PSS", saltLength: p.salt }, key, v.signature, data);
+      }
+      if (v.sigOid in EC_SIG && CURVE[cert.curve]) {
+        const [curve, size] = CURVE[cert.curve], h = EC_SIG[v.sigOid] || hash;
+        const key = await subtle.importKey("spki", cert.spki, { name: "ECDSA", namedCurve: curve }, false, ["verify"]);
+        return await subtle.verify({ name: "ECDSA", hash: h }, key, ecdsaRaw(v.signature, size), data);
+      }
+    } catch { return null; }
+    return null;
+  }
+  /**
+   * Verifies a signer of a CMS SignedData: the document hash must match the signed one (integrity)
+   * and the signature must verify with the certificate's public key.
+   * Resolves { status: "valid" | "invalid" | "unknown", reason }.
+   */
+  async function verify(s) {
+    const v = s.v;
+    if (!(globalThis.crypto && crypto.subtle)) return { status: "unknown", reason: "unavailable" };
+    if (!v || !s.cert || !s.content) return { status: "unknown", reason: "missing" };
+    const hash = HASH[v.digestOid];
+    if (!hash) return { status: "unknown", reason: "algorithm" };
+    let data = s.content;
+    if (v.signedAttrs) {
+      if (!v.md) return { status: "invalid", reason: "content" };
+      const digest = new Uint8Array(await crypto.subtle.digest(hash, s.content));
+      if (!eq(digest, v.md)) return { status: "invalid", reason: "content" };
+      data = v.signedAttrs;
+    }
+    const ok = await verifySignature(s.cert, v, hash, data);
+    if (ok === null) return { status: "unknown", reason: "algorithm" };
+    return ok ? { status: "valid" } : { status: "invalid", reason: "signature" };
+  }
+  /** The timestamp must be signed by its authority and refer to this very signature (hash of the signature value). */
+  async function verifyTimestamp(s) { return s.tsa ? verifyStamp(s.tsa, s.v.signature) : { status: "unknown" }; }
+  /** A timestamp is valid when its authority's signature verifies and its imprint is the hash of `covered`. */
+  async function verifyStamp(t, covered) {
+    if (!t || !t.signer || !covered) return { status: "unknown", reason: "missing" };
+    const r = await verify(t.signer);
+    if (r.status !== "valid") return r;
+    const hash = HASH[t.imprintOid];
+    if (!hash) return { status: "unknown", reason: "algorithm" };
+    const digest = new Uint8Array(await crypto.subtle.digest(hash, covered));
+    return eq(digest, t.imprint) ? { status: "valid" } : { status: "invalid", reason: "imprint" };
+  }
+  // ---- Outer timestamp containers: .m7m (MIME) and .tsd (RFC 5544 TimeStampedData) ----
+  const TSD = "1.2.840.113549.1.9.16.1.31";
+  /** TimeStampToken (ContentInfo) or TimeStampResp ({ status, token }) -> parsed timestamp, or null. */
+  function stampFrom(u8) {
+    try {
+      const root = parse(u8, 0, u8.length);
+      if (root.kids && root.kids[0] && root.kids[0].tag === 6) return timestamp(u8);
+      if (root.kids && root.kids[1]) return timestamp(raw(u8, root.kids[1]));
+    } catch { }
+    return null;
+  }
+  /** .tsd: TimeStampedData { version, dataUri?, metaData?, content?, temporalEvidence [0] SEQUENCE OF { token, crl? } } */
+  function unwrapTsd(buf) {
+    let root;
+    try { root = parse(buf, 0, buf.length); } catch { return null; }
+    if (!root.kids || root.kids.length < 2 || root.kids[0].tag !== 6 || oid(buf, root.kids[0]) !== TSD) return null;
+    const td = root.kids[1].kids[0].kids;
+    const meta = td.find(k => k.cls === 0 && k.tag === 16), body = td.find(k => k.cls === 0 && k.tag === 4);
+    const evidence = td.find(k => k.cls === 2 && k.tag === 0);
+    if (!body) throw new Error("err.tsdNoContent");
+    const content = octets(buf, body).slice();
+    let fileName = null, covered = content;
+    if (meta) {
+      const fn = meta.kids.find(k => k.tag === 12); if (fn) fileName = str(buf, fn);
+      const hp = meta.kids.find(k => k.tag === 1); // hashProtected: the imprint also covers the metadata
+      if (hp && bytes(buf, hp)[0]) { const m = raw(buf, meta); covered = new Uint8Array(content.length + m.length); covered.set(content); covered.set(m, content.length); }
+    }
+    const stamps = [];
+    for (const tac of (evidence && evidence.kids[0] && evidence.kids[0].kids) || []) {
+      const t = tac.kids && tac.kids[0] && stampFrom(raw(buf, tac.kids[0]));
+      if (t) { t.covered = covered; t.kind = "tsd"; stamps.push(t); }
+    }
+    return { content, fileName, stamps };
+  }
+  /** .m7m: multipart MIME with the signed file (.p7m) and the timestamp (.tsr / timestamp-reply). */
+  function unwrapMime(buf) {
+    const head = new TextDecoder("latin1").decode(buf.subarray(0, Math.min(buf.length, 4096)));
+    if (!/^\s*(mime-version|content-type)\s*:/i.test(head)) return null;
+    const text = new TextDecoder("latin1").decode(buf);
+    const bm = text.match(/boundary\s*=\s*"?([^"\r\n;]+)"?/i);
+    if (!bm) return null;
+    const toBytes = s => { const o = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) o[i] = s.charCodeAt(i); return o; };
+    const parts = text.split("--" + bm[1]).slice(1).filter(p => !/^--/.test(p)).map(p => {
+      const sep = p.search(/\r?\n\r?\n/);
+      const headers = p.slice(0, sep), body = p.slice(sep).replace(/^\r?\n\r?\n/, "").replace(/\r?\n$/, "");
+      const b64 = /content-transfer-encoding\s*:\s*base64/i.test(headers);
+      let data;
+      try { data = b64 ? toBytes(atob(body.replace(/[^A-Za-z0-9+/=]/g, ""))) : toBytes(body); } catch { data = toBytes(body); }
+      const nm = headers.match(/(?:file)?name\s*=\s*"?([^"\r\n;]+)"?/i);
+      return { headers: headers.toLowerCase(), name: nm ? nm[1].trim() : null, data };
+    });
+    const isStamp = p => /timestamp|\.tsr\b|\.tst\b|\.tsd\b/.test(p.headers);
+    const signed = parts.find(p => !isStamp(p) && (/pkcs7|\.p7m\b/.test(p.headers) || unwrapOnce(p.data))) || parts.find(p => !isStamp(p));
+    if (!signed) return null;
+    const stamps = [];
+    for (const p of parts.filter(isStamp)) { const t = stampFrom(p.data); if (t) { t.covered = signed.data; t.kind = "m7m"; stamps.push(t); } }
+    return { content: signed.data, fileName: signed.name, stamps };
+  }
+  // ---- Recognised certification authorities (AgID Trusted List, from trusted-list.js) ----
+  const fromB64 = t => { const b = atob(t); const o = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) o[i] = b.charCodeAt(i); return o; };
+  const hex = u8 => Array.from(u8, x => x.toString(16).padStart(2, "0")).join("");
+  let trustIndex = null;
+  function trustList() {
+    const l = globalThis.TRUSTED_LIST;
+    if (!l || !Array.isArray(l.cas)) return null;
+    if (!trustIndex || trustIndex.list !== l)
+      trustIndex = { list: l, cas: l.cas.map(c => ({ name: c.n, subject: fromB64(c.s), spki: fromB64(c.p), ski: c.k, periods: c.g })) };
+    return trustIndex;
+  }
+  /** Date of the list and whether it is past its next scheduled update. */
+  function trustListInfo() {
+    const l = globalThis.TRUSTED_LIST;
+    if (!l || !l.issued) return null;
+    return { issued: new Date(l.issued), stale: !!l.next && new Date() > new Date(l.next) };
+  }
+  function curveOf(spki) { const n = parse(spki, 0, spki.length); const p = n.kids[0].kids[1]; return p && p.tag === 6 ? oid(spki, p) : null; }
+  /** Was `child` (a parsed certificate) signed with this issuer key? true/false, or null if the algorithm is unsupported. */
+  function signedBy(child, issuer) {
+    const hash = child.sigOid === RSA_PSS ? pssParams(child.sigParams, "SHA-256").hash : RSA_SIG[child.sigOid] || EC_SIG[child.sigOid];
+    if (!hash) return Promise.resolve(null);
+    return verifySignature(issuer, { sigOid: child.sigOid, sigParams: child.sigParams, signature: child.sigValue }, hash, child.tbsRaw);
+  }
+  const recognisedAt = (ca, at) => ca.periods.some(([from, to]) => at >= new Date(from) && (!to || at < new Date(to)));
+  /**
+   * Was the signer's certificate issued by an authority in the AgID Trusted List, accredited at time `at`?
+   * Follows intermediate certificates included in the .p7m. Resolves
+   * { status: "trusted", name } | { status: "untrusted", reason: "unknown" | "notatthetime", name? } | { status: "unknown", reason }.
+   */
+  async function trust(s, at) {
+    const tl = trustList();
+    if (!tl) return { status: "unknown", reason: "nolist" };
+    if (!(globalThis.crypto && crypto.subtle)) return { status: "unknown", reason: "unavailable" };
+    if (!s.cert) return { status: "unknown", reason: "missing" };
+    let cert = s.cert;
+    for (let depth = 0; depth < 4; depth++) {
+      const aki = cert.aki && hex(cert.aki);
+      for (const ca of tl.cas.filter(ca => eq(ca.subject, cert.issuerRaw) || (aki && ca.ski === aki))) {
+        if (await signedBy(cert, { spki: ca.spki, curve: curveOf(ca.spki) }))
+          return recognisedAt(ca, at) ? { status: "trusted", name: ca.name } : { status: "untrusted", reason: "notatthetime", name: ca.name };
+      }
+      const up = (s.certs || []).find(c => c !== cert && eq(c.subjectRaw, cert.issuerRaw) && !eq(c.subjectRaw, c.issuerRaw));
+      if (!up || !(await signedBy(cert, up))) break;
+      cert = up; // intermediate certificate included in the .p7m: check who issued it
+    }
+    return { status: "untrusted", reason: "unknown" };
+  }
+  function open(u8) {
+    let buf = u8;
+    const stamps = []; let fileName = null;
+    for (let i = 0; i < 3; i++) { // .m7m / .tsd around the .p7m (possibly nested)
+      const o = unwrapMime(buf) || unwrapTsd(buf.length && buf[0] === 0x30 ? buf : (decodeText(buf) || buf));
+      if (!o) break;
+      stamps.push(...o.stamps); fileName = fileName || o.fileName; buf = o.content;
+    }
+    if (buf[0] !== 0x30) { const d = decodeText(buf); if (d) buf = d; }
+    const layers = [];
+    while (true) {
+      const r = unwrapOnce(buf);
+      if (!r) {
+        if (!layers.length && !stamps.length) throw new Error("err.notP7m");
+        break;
+      }
+      layers.push(r.signers);
+      if (!r.content) throw new Error("err.detached");
+      buf = r.content;
+      if (buf[0] !== 0x30) { const d = buf.length < 64 * 1024 * 1024 && decodeText(buf); if (d && unwrapOnce(d)) buf = d; }
+    }
+    return { content: buf, layers, stamps, fileName };
+  }
+  /**
+   * Office Open XML (.docx/.xlsx/.pptx) and OpenDocument (.odt/.ods/.odp) files are ZIP archives:
+   * tell them apart from a plain .zip by the names of the files inside (from the ZIP central directory,
+   * no decompression needed) and, for OpenDocument/EPUB, the uncompressed "mimetype" entry stored first.
+   */
+  function zipKind(b) {
+    const u16 = i => b[i] | b[i + 1] << 8, u32 = i => (b[i] | b[i + 1] << 8 | b[i + 2] << 16 | b[i + 3] << 24) >>> 0;
+    const latin = (from, len) => new TextDecoder("latin1").decode(b.subarray(from, from + len));
+    // OpenDocument / EPUB: first entry "mimetype", stored, containing the media type
+    if (latin(30, u16(26)) === "mimetype" && u16(8) === 0) {
+      const mt = latin(30 + u16(26) + u16(28), Math.min(u32(18), 100)).trim();
+      const ODF = { "application/vnd.oasis.opendocument.text": ["odt", "type.odt"],
+        "application/vnd.oasis.opendocument.spreadsheet": ["ods", "type.ods"],
+        "application/vnd.oasis.opendocument.presentation": ["odp", "type.odp"],
+        "application/vnd.oasis.opendocument.graphics": ["odg", "type.odg"],
+        "application/epub+zip": ["epub", "type.epub"] };
+      if (ODF[mt]) return { ext: ODF[mt][0], label: ODF[mt][1] };
+    }
+    // Office Open XML: [Content_Types].xml plus the main folder (word/, xl/, ppt/)
+    const names = [];
+    for (let e = b.length - 22; e >= Math.max(0, b.length - 65557); e--) {
+      if (u32(e) !== 0x06054b50) continue; // end of central directory
+      let p = u32(e + 16);
+      for (let n = u16(e + 10); n > 0 && p + 46 <= b.length && u32(p) === 0x02014b50; n--) {
+        names.push(latin(p + 46, u16(p + 28)));
+        p += 46 + u16(p + 28) + u16(p + 30) + u16(p + 32);
+      }
+      break;
+    }
+    if (names.includes("[Content_Types].xml")) {
+      if (names.some(n => n.startsWith("word/"))) return { ext: "docx", label: "type.docx" };
+      if (names.some(n => n.startsWith("xl/"))) return { ext: "xlsx", label: "type.xlsx" };
+      if (names.some(n => n.startsWith("ppt/"))) return { ext: "pptx", label: "type.pptx" };
+    }
+    return { ext: "zip", label: "type.zip" };
+  }
+  function sniff(b) {
+    const h = (...x) => x.every((v, i) => b[i] === v);
+    if (h(0x25, 0x50, 0x44, 0x46)) return { ext: "pdf", label: "type.pdf" };
+    if (h(0xff, 0xd8, 0xff)) return { ext: "jpg", label: "type.jpg" };
+    if (h(0x89, 0x50, 0x4e, 0x47)) return { ext: "png", label: "type.png" };
+    if (h(0x50, 0x4b, 0x03, 0x04)) { try { return zipKind(b); } catch { return { ext: "zip", label: "type.zip" }; } }
+    if (h(0xd0, 0xcf, 0x11, 0xe0)) return { ext: "doc", label: "type.doc" };
+    const t = new TextDecoder("latin1").decode(b.subarray(0, 400)).replace(/^﻿|^ï»¿/, "").trimStart();
+    if (t.startsWith("<")) return { ext: "xml", label: "type.xml", text: true };
+    return { ext: "", label: "type.file", text: !b.subarray(0, 512).some(x => x === 0) };
+  }
+  return { open, sniff, verify, verifyTimestamp, verifyStamp, trust, trustListInfo };
+})();
+
+const $ = id => document.getElementById(id);
+const SAVE_EXT = ["pdf","jpg","jpeg","png","gif","webp","txt","json","md","csv","html","svg","docx","xlsx","pptx","zip","epub"];
+// ---- Languages (Italian, English): the language of the phone / browser, or the one chosen in the menu ----
+const I18N = {
+  it: {
+    sub: "Estrai il documento originale da un file firmato digitalmente",
+    emptyTitle: "Nessun file aperto",
+    pick: "Scegli file .p7m",
+    tapHint: "Tocca «Scegli file .p7m» oppure apri un .p7m da Gmail, WhatsApp o Files. ",
+    dragHint: "Oppure trascinalo qui. ",
+    local: "Il file resta sul tuo dispositivo: niente viene caricato online.",
+    docLabel: "Documento originale",
+    open: "Apri file", share: "Condividi", save: "Scarica file",
+    signedBy: "Firmato da",
+    footer: "Verifica che il documento non sia stato modificato dopo la firma, che il certificato sia stato emesso da un certificatore accreditato AgID e mostra chi ha firmato e quando. Non controlla la revoca dei certificati: per la validità legale servono strumenti ufficiali come quelli dei certificatori accreditati AgID.",
+    androidTip: "Su Android: salva prima il .p7m dall'email o da WhatsApp, poi aprilo da qui con «Scegli file».",
+    "err.notP7m": "Il file non sembra una busta firmata .p7m valida.",
+    "err.detached": "La busta contiene solo la firma: il documento originale non è incluso (firma separata).",
+    "err.tsdNoContent": "Il file .tsd non contiene il documento (solo il riferimento a un file esterno).",
+    "err.tooLarge": "Il file è troppo grande.",
+    "err.read": "Non riesco a leggere il file.",
+    "err.noApp": "Nessuna app installata può aprire questo tipo di file. Puoi comunque scaricarlo.",
+    "err.open": "Non riesco ad aprire il file.",
+    "err.share": "Non riesco a condividere il file.",
+    "save.done": "Salvato: {name}", "save.downloaded": "Scaricato: {name}",
+    "save.failed": "Salvataggio non riuscito. Riprova.",
+    "save.rejected": "Questo formato non si può salvare da qui.",
+    "save.busy": "C'è già una richiesta di salvataggio aperta.",
+    "type.pdf": "Documento PDF", "type.jpg": "Immagine JPEG", "type.png": "Immagine PNG", "type.zip": "Archivio ZIP",
+    "type.doc": "Documento Office (vecchio formato)", "type.xml": "File XML", "type.file": "File",
+    "type.docx": "Documento Word", "type.xlsx": "Foglio di calcolo Excel", "type.pptx": "Presentazione PowerPoint",
+    "type.odt": "Documento di testo OpenDocument", "type.ods": "Foglio di calcolo OpenDocument",
+    "type.odp": "Presentazione OpenDocument", "type.odg": "Disegno OpenDocument", "type.epub": "Libro EPUB",
+    "meta.nested": "firmato {n} volte (buste annidate)",
+    "date.none": "non indicata",
+    "signer.unknown": "Firmatario sconosciuto",
+    "row.signedAt": "Firmato il", "row.tsa": "Marca temporale", "row.cf": "Codice fiscale", "row.id": "Identificativo",
+    "row.org": "Organizzazione", "row.issuer": "Emesso da", "row.validity": "Certificato valido",
+    "chip.qualified": "Certificato qualificato", "chip.nonRep": "Uso: firma digitale", "chip.withTsa": "Con marca temporale",
+    "chip.validAt": "Valido al momento della firma", "chip.validNow": "Certificato in corso di validità",
+    "chip.expiredAt": "Scaduto al momento della firma", "chip.expired": "Certificato scaduto",
+    "list.none": "Elenco certificatori AgID non disponibile",
+    "list.date": "Elenco certificatori AgID aggiornato al {date}",
+    "list.stale": " · non più aggiornato: aggiorna l'app o la pagina",
+    "verify.checking": "Verifica della firma…",
+    "verify.valid": "Firma valida · documento integro",
+    "verify.content": "Firma non valida: documento modificato dopo la firma",
+    "verify.signature": "Firma non valida: non corrisponde al certificato",
+    "verify.unavailable": "Verifica non disponibile in questa pagina (serve https)",
+    "verify.algorithm": "Verifica non disponibile per questo algoritmo",
+    "verify.missing": "Verifica non disponibile: certificato mancante",
+    "stamp.checking": "Verifica della marca…", "stamp.line": "Marca temporale: {date}",
+    "stamp.valid": "Marca temporale valida", "stamp.imprint": "Marca temporale non valida: non si riferisce a questo file",
+    "stamp.invalid": "Marca temporale non valida", "stamp.unknown": "Verifica della marca non disponibile",
+    "trust.checking": "Verifica del certificatore…",
+    "trust.ok": "Certificatore riconosciuto: {name}",
+    "trust.notAtTime": "{name}: non accreditato alla data della firma",
+    "trust.unknown": "Certificatore non riconosciuto: identità del firmatario non garantita",
+    "trust.nolist": "Certificatore non verificabile: elenco AgID non disponibile",
+    "trust.missing": "Certificatore non verificabile: certificato mancante",
+    "trust.algorithm": "Certificatore non verificabile per questo algoritmo",
+    "warn.sigOne": "Attenzione: la firma non è valida. Il documento potrebbe essere stato modificato dopo la firma: non fidarti del suo contenuto.",
+    "warn.sigMany": "Attenzione: alcune firme non sono valide. Il documento potrebbe essere stato modificato dopo la firma: non fidarti del suo contenuto.",
+    "warn.stamp": "Attenzione: la marca temporale non è valida o non si riferisce a questo file: la data indicata non è attendibile.",
+    "signers.count": "Firmato da {n} firmatari", "signers.none": "Nessuna firma digitale",
+    "signers.onlyStamp": "Il file contiene solo una marca temporale: attesta che il documento esisteva in quella data, ma non chi l'ha firmato.",
+  },
+  en: {
+    sub: "Extract the original document from a digitally signed file",
+    emptyTitle: "No file open",
+    pick: "Choose .p7m file",
+    tapHint: "Tap “Choose .p7m file” or open a .p7m from Gmail, WhatsApp or Files. ",
+    dragHint: "Or drag it here. ",
+    local: "The file stays on your device: nothing is uploaded.",
+    docLabel: "Original document",
+    open: "Open file", share: "Share", save: "Download file",
+    signedBy: "Signed by",
+    footer: "Checks that the document has not been changed after signing and that the certificate was issued by a trust service provider accredited by AgID (Italy), and shows who signed and when. It does not check certificate revocation: for legal validity, use official tools such as those of AgID-accredited providers.",
+    androidTip: "On Android: first save the .p7m from the email or WhatsApp, then open it here with “Choose file”.",
+    "err.notP7m": "This file does not look like a valid signed .p7m envelope.",
+    "err.detached": "The envelope only contains the signature: the original document is not included (detached signature).",
+    "err.tsdNoContent": "The .tsd file does not contain the document (only a reference to an external file).",
+    "err.tooLarge": "The file is too large.",
+    "err.read": "Cannot read the file.",
+    "err.noApp": "No installed app can open this type of file. You can still download it.",
+    "err.open": "Cannot open the file.",
+    "err.share": "Cannot share the file.",
+    "save.done": "Saved: {name}", "save.downloaded": "Downloaded: {name}",
+    "save.failed": "Saving failed. Please try again.",
+    "save.rejected": "This format cannot be saved from here.",
+    "save.busy": "A save request is already open.",
+    "type.pdf": "PDF document", "type.jpg": "JPEG image", "type.png": "PNG image", "type.zip": "ZIP archive",
+    "type.doc": "Office document (old format)", "type.xml": "XML file", "type.file": "File",
+    "type.docx": "Word document", "type.xlsx": "Excel spreadsheet", "type.pptx": "PowerPoint presentation",
+    "type.odt": "OpenDocument text", "type.ods": "OpenDocument spreadsheet",
+    "type.odp": "OpenDocument presentation", "type.odg": "OpenDocument drawing", "type.epub": "EPUB book",
+    "meta.nested": "signed {n} times (nested envelopes)",
+    "date.none": "not stated",
+    "signer.unknown": "Unknown signer",
+    "row.signedAt": "Signed on", "row.tsa": "Timestamp", "row.cf": "Italian tax code", "row.id": "Identifier",
+    "row.org": "Organisation", "row.issuer": "Issued by", "row.validity": "Certificate valid",
+    "chip.qualified": "Qualified certificate", "chip.nonRep": "Use: digital signature", "chip.withTsa": "With timestamp",
+    "chip.validAt": "Valid at signing time", "chip.validNow": "Certificate currently valid",
+    "chip.expiredAt": "Expired at signing time", "chip.expired": "Certificate expired",
+    "list.none": "AgID trust list not available",
+    "list.date": "AgID trust list updated on {date}",
+    "list.stale": " · out of date: update the app or reload the page",
+    "verify.checking": "Checking signature…",
+    "verify.valid": "Valid signature · document intact",
+    "verify.content": "Invalid signature: document changed after signing",
+    "verify.signature": "Invalid signature: it does not match the certificate",
+    "verify.unavailable": "Verification not available on this page (https required)",
+    "verify.algorithm": "Verification not available for this algorithm",
+    "verify.missing": "Verification not available: certificate missing",
+    "stamp.checking": "Checking timestamp…", "stamp.line": "Timestamp: {date}",
+    "stamp.valid": "Valid timestamp", "stamp.imprint": "Invalid timestamp: it does not refer to this file",
+    "stamp.invalid": "Invalid timestamp", "stamp.unknown": "Timestamp verification not available",
+    "trust.checking": "Checking trust service provider…",
+    "trust.ok": "Recognised trust service provider: {name}",
+    "trust.notAtTime": "{name}: not accredited at signing time",
+    "trust.unknown": "Trust service provider not recognised: signer's identity not guaranteed",
+    "trust.nolist": "Provider cannot be checked: AgID trust list not available",
+    "trust.missing": "Provider cannot be checked: certificate missing",
+    "trust.algorithm": "Provider cannot be checked for this algorithm",
+    "warn.sigOne": "Warning: the signature is not valid. The document may have been changed after signing: do not trust its content.",
+    "warn.sigMany": "Warning: some signatures are not valid. The document may have been changed after signing: do not trust its content.",
+    "warn.stamp": "Warning: the timestamp is not valid or does not refer to this file: the date shown is not reliable.",
+    "signers.count": "Signed by {n} signers", "signers.none": "No digital signature",
+    "signers.onlyStamp": "The file only contains a timestamp: it proves the document existed on that date, but not who signed it.",
+  },
+};
+const LANGS = Object.keys(I18N);
+function detectLang(){
+  let saved = null;
+  try { saved = localStorage.getItem("lang"); } catch {}
+  if (LANGS.includes(saved)) return saved;
+  const nav = ((navigator.languages && navigator.languages[0]) || navigator.language || "").toLowerCase();
+  return nav.startsWith("it") ? "it" : "en"; // English for every other language
+}
+let LANG = detectLang();
+/** Text for a key in the current language, with {placeholders} filled in (falls back to Italian, then the key). */
+function t(key, vars){
+  let s = I18N[LANG][key] ?? I18N.it[key] ?? key;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
+  return s;
+}
+const i18n = t; // for code where a local variable is named t
+function applyStatic(){
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach(e => { e.textContent = t(e.dataset.i18n); });
+  $("lang").value = LANG;
+}
+let lastInput = null; // the last opened file, redrawn in the new language when the language changes
+function setLang(lang){
+  if (!LANGS.includes(lang)) return;
+  LANG = lang;
+  try { localStorage.setItem("lang", lang); } catch {}
+  applyStatic();
+  if (lastInput) load(lastInput.u8, lastInput.fileName, lastInput.fromOtherApp);
+}
+
+let current = null;
+
+const locale = () => LANG === "it" ? "it-IT" : "en-GB";
+const fmtDate = d => d ? d.toLocaleString(locale(),{day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}) : t("date.none");
+const fmtDay = d => d ? d.toLocaleDateString(locale(),{day:"2-digit",month:"2-digit",year:"numeric"}) : "?";
+const fmtSize = n => { const f = x => x.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return n < 1024 ? n+" B" : n < 1048576 ? f(n/1024)+" KB" : f(n/1048576)+" MB"; };
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+function showMsg(text, kind){ const m=$("msg"); if(!text){m.hidden=true;return;} m.className="notice "+kind; m.textContent=text; m.hidden=false; }
+
+function outName(fileName, type){
+  let n = (fileName||"documento.p7m").replace(/(\.(p7m|m7m|tsd))+$/i,"").replace(/\.(p7m|m7m|tsd)(?=\.)/ig,"");
+  if (!/\.[a-z0-9]{2,5}$/i.test(n)) n += "." + (type.ext || "bin");
+  return n;
+}
+
+function signerBlock(s, idx){
+  const box = el("div","signer");
+  const c = s.cert, sub = c ? c.subject : {};
+  const who = (sub.GN && sub.SN) ? sub.GN+" "+sub.SN : (sub.CN || t("signer.unknown"));
+  box.append(el("div","who",who));
+  const dl = el("dl","kv");
+  const row = (k,v,mono) => { if(!v) return; dl.append(el("dt",null,k)); dl.append(el("dd",mono?"mono":null,v)); };
+  const cf = sub.serial && sub.serial.replace(/^TIN[A-Z]{2}-/,"");
+  row(t("row.signedAt"), fmtDate(s.time));
+  if (s.tsa) row(t("row.tsa"), fmtDate(s.tsa.time) + (s.tsa.authority ? " · " + s.tsa.authority : ""));
+  row(sub.serial && /^TIN/.test(sub.serial) ? t("row.cf") : t("row.id"), cf, true);
+  row(t("row.org"), sub.O);
+  if (c) row(t("row.issuer"), c.issuer.CN || c.issuer.O);
+  if (c) row(t("row.validity"), fmtDay(c.from)+" – "+fmtDay(c.to));
+  box.append(dl);
+  const chips = el("div","chips");
+  s.verifyChip = el("span","chip verify",t("verify.checking"));
+  s.trustChip = el("span","chip trust",t("trust.checking"));
+  chips.append(s.verifyChip, s.trustChip);
+  if (c){
+    if (c.qualified) chips.append(el("span","chip good",t("chip.qualified")));
+    if (c.nonRep) chips.append(el("span","chip",t("chip.nonRep")));
+    if (s.tsa) chips.append(s.tsaChip = el("span","chip good",t("chip.withTsa")));
+    // The timestamp is certified by a third party: prefer it to the time declared by the signer.
+    const signedAt = s.signedAt = (s.tsa && s.tsa.time) || s.outerTime || s.time;
+    const at = signedAt || new Date();
+    if (c.from && c.to) chips.append(at >= c.from && at <= c.to ? el("span","chip good", t(signedAt ? "chip.validAt" : "chip.validNow")) : el("span","chip bad", t(signedAt ? "chip.expiredAt" : "chip.expired")));
+  }
+  box.append(chips);
+  const tl = P7M.trustListInfo();
+  box.append(el("p","meta trust-date", !tl ? t("list.none") : t("list.date", { date: fmtDay(tl.issued) }) + (tl.stale ? t("list.stale") : "")));
+  return box;
+}
+
+const VERIFY_TEXT = new Proxy({}, { get: (_, k) => t("verify." + String(k)) });
+/** Verifies every signer (and its timestamp) and updates the badges. Resolves true when any signature is invalid. */
+const STAMP_TEXT = new Proxy({}, { get: (_, k) => t("stamp." + String(k)) });
+async function verifyAll(signers, token, stamps = []){
+  let invalid = [], badStamps = 0;
+  for (const t of stamps){
+    let r;
+    try { r = await P7M.verifyStamp(t, t.covered); } catch { r = { status: "unknown" }; }
+    if (token !== loadToken) return false;
+    t.chip.className = "chip verify " + (r.status === "valid" ? "good" : r.status === "invalid" ? "bad" : "");
+    t.chip.textContent = r.status === "valid" ? STAMP_TEXT.valid : r.status === "invalid" ? (STAMP_TEXT[r.reason] || STAMP_TEXT.invalid)
+      : r.reason === "unavailable" ? VERIFY_TEXT.unavailable : STAMP_TEXT.unknown;
+    if (r.status === "invalid") badStamps++;
+  }
+  for (const s of signers){
+    let r;
+    try { r = await P7M.verify(s); } catch { r = { status: "unknown", reason: "algorithm" }; }
+    if (token !== loadToken) return false; // another file was opened meanwhile
+    s.verifyChip.className = "chip verify " + (r.status === "valid" ? "good" : r.status === "invalid" ? "bad" : "");
+    s.verifyChip.textContent = r.status === "valid" ? VERIFY_TEXT.valid : VERIFY_TEXT[r.reason] || VERIFY_TEXT.algorithm;
+    if (r.status === "invalid") invalid.push(s);
+    let tr;
+    try { tr = await P7M.trust(s, s.signedAt || new Date()); } catch { tr = { status: "unknown", reason: "algorithm" }; }
+    if (token !== loadToken) return false;
+    s.trustChip.className = "chip trust " + (tr.status === "trusted" ? "good" : tr.status === "untrusted" ? "bad" : "");
+    s.trustChip.textContent = tr.status === "trusted" ? i18n("trust.ok", { name: tr.name })
+      : tr.reason === "notatthetime" ? i18n("trust.notAtTime", { name: tr.name })
+      : tr.status === "untrusted" ? i18n("trust.unknown")
+      : tr.reason === "nolist" ? i18n("trust.nolist")
+      : tr.reason === "unavailable" ? VERIFY_TEXT.unavailable
+      : tr.reason === "missing" ? i18n("trust.missing")
+      : i18n("trust.algorithm");
+    if (s.tsa && s.tsaChip){
+      let t;
+      try { t = await P7M.verifyTimestamp(s); } catch { t = { status: "unknown" }; }
+      if (t.status === "invalid"){ s.tsaChip.className = "chip bad"; s.tsaChip.textContent = STAMP_TEXT.invalid; }
+    }
+  }
+  if (invalid.length) showMsg(t(invalid.length > 1 ? "warn.sigMany" : "warn.sigOne"), "err");
+  else if (badStamps) showMsg(t("warn.stamp"), "err");
+  return invalid.length > 0 || badStamps > 0;
+}
+
+let loadToken = 0;
+/**
+ * Opens a .p7m. Resolves { ok, invalid } once the signatures have been verified.
+ * fromOtherApp: received through Android "Apri con" / "Condividi" — Back then leaves the app instead of
+ * returning to the start screen, so no history entry is added.
+ */
+async function load(u8, fileName, fromOtherApp = false){
+  lastInput = { u8, fileName, fromOtherApp };
+  showMsg(null); $("saveMsg").hidden = true;
+  if (nativeP7m) nativeP7m.setBackExits({ value: fromOtherApp }).catch(() => {});
+  let r;
+  try { r = P7M.open(u8); }
+  catch(e){ $("result").hidden = true; document.body.classList.remove("has-result"); current = null; showMsg(t(e.message), "err"); return { ok: false }; }
+  const token = ++loadToken;
+  const type = P7M.sniff(r.content);
+  const name = outName(r.fileName || fileName, type);
+  current = { bytes: r.content, name, type };
+  $("docName").textContent = name;
+  $("docMeta").textContent = t(type.label) + " · " + fmtSize(r.content.length) + (r.layers.length>1 ? " · " + t("meta.nested", { n: r.layers.length }) : "");
+  // Outer timestamps (.m7m / .tsd): certified date the file already existed
+  const stampsBox = $("stamps"); stampsBox.replaceChildren();
+  for (const t of r.stamps){
+    const box = el("div","stamp");
+    box.append(el("div",null, i18n("stamp.line", { date: fmtDate(t.time) }) + (t.authority ? " · " + t.authority : "")));
+    const chips = el("div","chips"); t.chip = el("span","chip verify",i18n("stamp.checking")); chips.append(t.chip); box.append(chips);
+    stampsBox.append(box);
+  }
+  const ext = name.split(".").pop().toLowerCase();
+  $("save").disabled = !!window.claude?.use && !SAVE_EXT.includes(ext);
+  $("save").title = $("save").disabled ? t("save.rejected") : "";
+  const list = $("signers"); list.replaceChildren();
+  let n = 0;
+  const all = [];
+  const outerTime = r.stamps.length ? r.stamps[0].time : null;
+  r.layers.forEach(layer => layer.forEach(s => { s.outerTime = outerTime; list.append(signerBlock(s, n++)); all.push(s); }));
+  $("signLabel").textContent = n > 1 ? t("signers.count", { n }) : n ? t("signedBy") : t("signers.none");
+  if (!n) list.append(el("p","meta",t("signers.onlyStamp")));
+  $("result").hidden = false; document.body.classList.add("has-result");
+  // A history entry for the result: Back (browser or Android) returns to the start screen.
+  if (!fromOtherApp && !(history.state && history.state.result)) history.pushState({ result: true }, "");
+  if (matchMedia("(max-width:599px)").matches) $("result").scrollIntoView({behavior:"smooth", block:"start"});
+  return { ok: true, invalid: await verifyAll(all, token, r.stamps) };
+}
+
+async function readFile(f){
+  if (!f) return;
+  const buf = new Uint8Array(await f.arrayBuffer());
+  load(buf, f.name);
+}
+
+function showStart(){
+  current = null; lastInput = null; loadToken++;
+  $("result").hidden = true; $("saveMsg").hidden = true; showMsg(null); document.body.classList.remove("has-result");
+  scrollTo(0, 0);
+}
+addEventListener("popstate", () => { if (!(history.state && history.state.result)) showStart(); });
+
+applyStatic();
+$("lang").addEventListener("change", e => setLang(e.target.value));
+
+$("pick").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", e => { readFile(e.target.files[0]); e.target.value=""; });
+const drop = $("drop");
+["dragenter","dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => readFile(e.dataTransfer.files[0]));
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => { e.preventDefault(); if (!drop.contains(e.target)) readFile(e.dataTransfer.files[0]); });
+
+let downloads;
+const MIME = { pdf:"application/pdf", xml:"application/xml", txt:"text/plain", jpg:"image/jpeg", jpeg:"image/jpeg", png:"image/png", zip:"application/zip",
+  doc:"application/msword", xls:"application/vnd.ms-excel", docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", pptx:"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  odt:"application/vnd.oasis.opendocument.text", ods:"application/vnd.oasis.opendocument.spreadsheet", odp:"application/vnd.oasis.opendocument.presentation",
+  odg:"application/vnd.oasis.opendocument.graphics", epub:"application/epub+zip" };
+const mimeOf = name => MIME[name.split(".").pop().toLowerCase()] || "application/octet-stream";
+
+// Android app (Capacitor): native "Save as" dialog and .p7m files opened from other apps.
+const nativeP7m = window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins?.P7m || null : null;
+function toB64(u8){ let s = ""; for (let i=0;i<u8.length;i+=0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i+0x8000)); return btoa(s); }
+function fromB64(b){ const s = atob(b); const u = new Uint8Array(s.length); for (let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u; }
+async function openNative(){
+  if (!current) return;
+  const sm = $("saveMsg");
+  try{ await nativeP7m.openFile({ name: current.name, mime: mimeOf(current.name), data: toB64(current.bytes) }); }
+  catch(e){
+    sm.className="notice err";
+    sm.textContent = t(e && e.code==="no_app" ? "err.noApp" : "err.open");
+    sm.hidden=false;
+  }
+}
+if (nativeP7m){
+  document.querySelectorAll(".web-only").forEach(e => e.hidden = true);
+  // In the app: "Apri file" is the main action, "Scarica file" becomes secondary.
+  $("open").hidden = false; $("share").hidden = false; $("save").className = "btn ghost";
+  $("share").addEventListener("click", async () => {
+    if (!current) return;
+    try { await nativeP7m.shareFile({ name: current.name, mime: mimeOf(current.name), data: toB64(current.bytes) }); }
+    catch(e){ const sm = $("saveMsg"); sm.className="notice err"; sm.textContent=t("err.share"); sm.hidden=false; }
+  });
+  // Snackbar: confirmations disappear on their own after a few seconds.
+  let snackTimer;
+  new MutationObserver(() => { clearTimeout(snackTimer); if (!$("saveMsg").hidden) snackTimer = setTimeout(() => $("saveMsg").hidden = true, 4000); })
+    .observe($("saveMsg"), { attributes: true, attributeFilter: ["hidden"], childList: true });
+  // Material You: on Android 12+ use the colours the system derives from the wallpaper.
+  const dark = matchMedia("(prefers-color-scheme: dark)");
+  const applyColors = p => {
+    if (!p || !p.dynamic) return;
+    const d = dark.matches, st = document.documentElement.style;
+    const v = { "primary": d?p.a1_200:p.a1_600, "on-primary": d?p.a1_800:p.a1_0, "primary-container": d?p.a1_700:p.a1_100, "on-primary-container": d?p.a1_100:p.a1_900,
+      "surface": d?p.n1_900:p.n1_10, "surface-low": d?p.n1_900:p.n1_50, "surface-high": d?p.n1_800:p.n1_100, "on-surface": d?p.n1_100:p.n1_900,
+      "on-surface-variant": d?p.n2_200:p.n2_700, "outline": d?p.n2_400:p.n2_500, "outline-variant": d?p.n2_700:p.n2_200,
+      "inverse-surface": d?p.n1_100:p.n1_800, "inverse-on-surface": d?p.n1_800:p.n1_50, "inverse-primary": d?p.a1_600:p.a1_200 };
+    for (const k in v) st.setProperty("--md-"+k, v[k]);
+  };
+  nativeP7m.getColors().then(p => { applyColors(p); dark.addEventListener("change", () => applyColors(p)); }).catch(() => {});
+  $("open").addEventListener("click", openNative);
+  // A .p7m arriving from "Apri con" / "Condividi": show it; the document opens only with "Apri file".
+  nativeP7m.addListener("file", async f => {
+    if (f.error){ showMsg(t(f.error==="too_large" ? "err.tooLarge" : "err.read"), "err"); return; }
+    await load(fromB64(f.data), f.name, true);
+  });
+}
+
+function browserSave(f){
+  const url = URL.createObjectURL(new Blob([f.bytes], { type: mimeOf(f.name) }));
+  const a = document.createElement("a");
+  a.href = url; a.download = f.name; a.style.display = "none";
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+$("save").addEventListener("click", async () => {
+  if (!current) return;
+  const sm = $("saveMsg");
+  if (nativeP7m){
+    try{
+      const res = await nativeP7m.saveFile({ name: current.name, mime: mimeOf(current.name), data: toB64(current.bytes) });
+      if (res.status === "saved"){ sm.className="notice ok"; sm.textContent=t("save.done", { name: current.name }); sm.hidden=false; }
+    }catch(e){ sm.className="notice err"; sm.textContent=t("save.failed"); sm.hidden=false; }
+    return;
+  }
+  if (downloads === undefined) downloads = window.claude?.use ? await window.claude.use("downloads") : null;
+  if (!downloads){ browserSave(current); sm.className="notice ok"; sm.textContent=t("save.downloaded", { name: current.name }); sm.hidden=false; return; }
+  try{
+    const res = await downloads.save({ filename: current.name, data: new Blob([current.bytes]) });
+    if (res.status === "saved"){ sm.className="notice ok"; sm.textContent=t("save.done", { name: current.name }); sm.hidden=false; }
+  }catch(e){
+    if (e && e.code === "declined") return;
+    sm.className="notice err";
+    sm.textContent = t(e && e.code==="rejected_extension" ? "save.rejected" : e && e.code==="rate_limited" ? "save.busy" : "save.failed");
+    sm.hidden=false;
+  }
+});
+
+</script>
+
+</body></html>
