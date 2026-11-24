@@ -2,7 +2,7 @@
 <title>Aprire P7M</title>
 <script>
 // Web fonts only on the website: the Android app uses the system font (Roboto) and works fully offline.
-if (!window.Capacitor?.isNativePlatform?.()) for (const [rel, href, co] of [["preconnect","https://fonts.googleapis.com"],["preconnect","https://fonts.gstatic.com",1],["stylesheet","https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap"]]){
+if (!window.Capacitor?.isNativePlatform?.()) for (const [rel, href, co] of [["preconnect","https://fonts.googleapis.com"],["preconnect","https://fonts.gstatic.com",1],["stylesheet","https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap"]]){
   const l = document.createElement("link"); l.rel = rel; l.href = href; if (co) l.crossOrigin = ""; document.head.append(l);
 }
 </script>
@@ -79,80 +79,90 @@ footer p{margin:0 0 8px;max-width:65ch}
 .ic{display:none;width:18px;height:18px;flex:none;fill:currentColor}
 .android-only{display:none}
 .lang{margin-left:auto;align-self:center;font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer}
-html.android .lang{background:transparent;color:var(--md-on-surface-variant);border:1px solid var(--md-outline-variant);border-radius:8px;height:36px;padding:0 8px;font:500 14px/20px Roboto,system-ui,sans-serif}
+html.md .lang{background:transparent;color:var(--md-on-surface-variant);border:1px solid var(--md-outline-variant);border-radius:8px;height:36px;padding:0 8px;font:500 14px/20px Roboto,system-ui,sans-serif}
 .too-old .drop,.too-old #result,.too-old #msg{display:none!important}
 
-/* ===== Android app: Material Design 3 ===== */
-html.android{
+/* ===== Material Design 3: same look on the Android app and on the website (html.md); html.android only for what is specific to the app ===== */
+html.md{
   --md-primary:#9C4135; --md-on-primary:#FFFFFF; --md-primary-container:#FFDAD5; --md-on-primary-container:#3F0402;
   --md-surface:#FFF8F6; --md-surface-low:#FFF0EE; --md-surface-high:#F6E4E1; --md-on-surface:#231918; --md-on-surface-variant:#534341;
   --md-outline:#857371; --md-outline-variant:#D8C2BE; --md-error-container:#FFDAD6; --md-on-error-container:#410002;
   --md-inverse-surface:#392E2C; --md-inverse-on-surface:#FFEDEA; --md-inverse-primary:#FFB4A8;
   --md-ok-container:#D4F5DD; --md-on-ok-container:#0D3B1E;
 }
-@media (prefers-color-scheme: dark){html.android{
+@media (prefers-color-scheme: dark){html.md{
   --md-primary:#FFB4A8; --md-on-primary:#5F150E; --md-primary-container:#7E2A21; --md-on-primary-container:#FFDAD5;
   --md-surface:#1A1110; --md-surface-low:#231918; --md-surface-high:#322826; --md-on-surface:#F1DFDC; --md-on-surface-variant:#D8C2BE;
   --md-outline:#A08C89; --md-outline-variant:#534341; --md-error-container:#93000A; --md-on-error-container:#FFDAD6;
   --md-inverse-surface:#F1DFDC; --md-inverse-on-surface:#392E2C; --md-inverse-primary:#9C4135;
-  --md-ok-container:#1F4D2E; --md-on-ok-container:#B6F2C6;
+  --md-ok-container:#1F4D2E; --md-on-ok-container:#B6F2C6; color-scheme:dark;
 }}
-html.android body{background:var(--md-surface);color:var(--md-on-surface);font:16px/24px Roboto,"Google Sans",system-ui,sans-serif;letter-spacing:.5px;-webkit-tap-highlight-color:transparent}
+html.md body{background:var(--md-surface);color:var(--md-on-surface);font:16px/24px Roboto,"Google Sans",system-ui,sans-serif;letter-spacing:.5px;-webkit-tap-highlight-color:transparent}
 html.android .android-only{display:inline}
 html.android .drag-hint{display:none}
-html.android .wrap{max-width:none;padding:0 16px 112px;gap:16px}
+html.md .wrap{max-width:none;padding:0 16px 112px;gap:16px}
 /* Top app bar */
-html.android header{position:sticky;top:0;z-index:2;height:64px;margin:0 -16px;padding:0 16px;background:var(--md-surface)}
-html.android .seal,html.android .sub{display:none}
-html.android h1{font:400 22px/28px Roboto,"Google Sans",system-ui,sans-serif;letter-spacing:0}
+html.md header{position:sticky;top:0;z-index:2;height:64px;margin:0 -16px;padding:0 16px;background:var(--md-surface)}
+html.md .seal,html.md .sub{display:none}
+html.md h1{font:400 22px/28px Roboto,"Google Sans",system-ui,sans-serif;letter-spacing:0}
 /* Empty state */
-html.android .drop{border:0;background:none;padding:48px 8px;text-align:center;justify-items:center}
-html.android body.has-result .drop{padding:0}
-html.android body.has-result .drop > :not(.fab){display:none}
-html.android .empty-title{display:block;margin:0;font:400 22px/28px Roboto,system-ui,sans-serif;color:var(--md-on-surface)}
-html.android .drop p{font-size:14px;line-height:20px;letter-spacing:.25px;color:var(--md-on-surface-variant);max-width:36ch}
+html.md .drop{border:0;background:none;padding:48px 8px;text-align:center;justify-items:center}
+html.md body.has-result .drop{padding:0}
+html.md body.has-result .drop > :not(.fab){display:none}
+html.md .empty-title{display:block;margin:0;font:400 22px/28px Roboto,system-ui,sans-serif;color:var(--md-on-surface)}
+html.md .drop p{font-size:14px;line-height:20px;letter-spacing:.25px;color:var(--md-on-surface-variant);max-width:36ch}
 /* Buttons */
-html.android .ic{display:block}
-html.android .btn{position:relative;overflow:hidden;width:auto;min-height:40px;height:40px;padding:0 24px 0 16px;border-radius:20px;gap:8px;
+html.md .ic{display:block}
+html.md .btn{position:relative;overflow:hidden;width:auto;min-height:40px;height:40px;padding:0 24px 0 16px;border-radius:20px;gap:8px;
   font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;transform:none}
-html.android .btn::after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s}
-html.android .btn:active::after{opacity:.12}
-html.android .btn:focus-visible{outline:2px solid var(--md-primary);outline-offset:2px}
-html.android .primary{background:var(--md-primary);color:var(--md-on-primary)}
-html.android .ghost{background:transparent;color:var(--md-primary);border:1px solid var(--md-outline)}
+html.md .btn::after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s}
+html.md .btn:active::after{opacity:.12}
+html.md .btn:focus-visible{outline:2px solid var(--md-primary);outline-offset:2px}
+html.md .primary{background:var(--md-primary);color:var(--md-on-primary)}
+html.md .ghost{background:transparent;color:var(--md-primary);border:1px solid var(--md-outline)}
 /* Extended FAB */
-html.android .fab{position:fixed;right:16px;bottom:16px;z-index:3;height:56px;min-height:56px;padding:0 20px 0 16px;border-radius:16px;gap:12px;
+html.md .fab{position:fixed;right:16px;bottom:16px;z-index:3;height:56px;min-height:56px;padding:0 20px 0 16px;border-radius:16px;gap:12px;
   background:var(--md-primary-container);color:var(--md-on-primary-container);
   box-shadow:0 1px 3px rgba(0,0,0,.3),0 4px 8px 3px rgba(0,0,0,.15)}
-html.android .fab .ic{width:24px;height:24px}
+html.md .fab .ic{width:24px;height:24px}
 /* Cards */
-html.android .result{gap:12px}
-html.android body.has-result{padding-bottom:88px} /* room for the FAB, so the last lines can scroll above it */
-html.android .doc{background:var(--md-surface);border:1px solid var(--md-outline-variant);border-radius:12px;padding:16px;gap:16px}
-html.android .label{font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;text-transform:none;color:var(--md-on-surface-variant);margin:0 0 4px}
-html.android .doc h2{font:400 22px/28px Roboto,system-ui,sans-serif;letter-spacing:0;color:var(--md-on-surface)}
-html.android .meta{font:400 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.25px;color:var(--md-on-surface-variant);margin-top:4px}
-html.android .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-html.android .actions .btn{width:100%}
-html.android #open{grid-column:1/-1}
+html.md .result{gap:12px}
+html.md body.has-result{padding-bottom:88px} /* room for the FAB, so the last lines can scroll above it */
+html.md .doc{background:var(--md-surface);border:1px solid var(--md-outline-variant);border-radius:12px;padding:16px;gap:16px}
+html.md .label{font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;text-transform:none;color:var(--md-on-surface-variant);margin:0 0 4px}
+html.md .doc h2{font:400 22px/28px Roboto,system-ui,sans-serif;letter-spacing:0;color:var(--md-on-surface)}
+html.md .meta{font:400 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.25px;color:var(--md-on-surface-variant);margin-top:4px}
+html.md .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+html.md .actions .btn{width:100%}
+html.md #open{grid-column:1/-1}
 /* Signers as a list */
-html.android .signer{border-top-color:var(--md-outline-variant);padding:12px 0}
-html.android .signer:first-of-type{padding-top:0}
-html.android .signer .who{font:500 16px/24px Roboto,system-ui,sans-serif;letter-spacing:.15px}
-html.android .kv dt{font:500 12px/16px Roboto,system-ui,sans-serif;letter-spacing:.5px;color:var(--md-on-surface-variant)}
-html.android .kv dd{font-size:16px;line-height:24px;margin:0 0 12px;color:var(--md-on-surface)}
-html.android .mono{font-family:"Roboto Mono",ui-monospace,monospace;font-size:15px}
-html.android .chips{gap:8px}
-html.android .chip{display:inline-flex;align-items:center;min-height:32px;padding:6px 12px;border-radius:8px;font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;
+html.md .signer{border-top-color:var(--md-outline-variant);padding:12px 0}
+html.md .signer:first-of-type{padding-top:0}
+html.md .signer .who{font:500 16px/24px Roboto,system-ui,sans-serif;letter-spacing:.15px}
+html.md .kv dt{font:500 12px/16px Roboto,system-ui,sans-serif;letter-spacing:.5px;color:var(--md-on-surface-variant)}
+html.md .kv dd{font-size:16px;line-height:24px;margin:0 0 12px;color:var(--md-on-surface)}
+html.md .mono{font-family:"Roboto Mono",ui-monospace,monospace;font-size:15px}
+html.md .chips{gap:8px}
+html.md .chip{display:inline-flex;align-items:center;min-height:32px;padding:6px 12px;border-radius:8px;font:500 14px/20px Roboto,system-ui,sans-serif;letter-spacing:.1px;
   background:transparent;color:var(--md-on-surface-variant);border:1px solid var(--md-outline-variant)}
-html.android .chip.good{background:var(--md-ok-container);color:var(--md-on-ok-container);border-color:transparent}
-html.android .chip.bad{background:var(--md-error-container);color:var(--md-on-error-container);border-color:transparent}
+html.md .chip.good{background:var(--md-ok-container);color:var(--md-on-ok-container);border-color:transparent}
+html.md .chip.bad{background:var(--md-error-container);color:var(--md-on-error-container);border-color:transparent}
 /* Messages */
-html.android .notice{border-radius:12px;padding:16px;font-size:14px;line-height:20px;letter-spacing:.25px}
-html.android .notice.err{background:var(--md-error-container);color:var(--md-on-error-container)}
-html.android #saveMsg{position:fixed;left:16px;right:16px;bottom:88px;z-index:4;border-radius:4px;padding:14px 16px;
+html.md .notice{border-radius:12px;padding:16px;font-size:14px;line-height:20px;letter-spacing:.25px}
+html.md .notice.err{background:var(--md-error-container);color:var(--md-on-error-container)}
+html.md #saveMsg{position:fixed;left:16px;right:16px;bottom:88px;z-index:4;border-radius:4px;padding:14px 16px;
   background:var(--md-inverse-surface);color:var(--md-inverse-on-surface);box-shadow:0 1px 3px rgba(0,0,0,.3),0 4px 8px 3px rgba(0,0,0,.15)}
-html.android footer{font-size:12px;line-height:16px;letter-spacing:.4px;color:var(--md-on-surface-variant)}
+html.md footer{font-size:12px;line-height:16px;letter-spacing:.4px;color:var(--md-on-surface-variant)}
+/* Website: centred column, and the file button sits in the drop area (it floats only in the app) */
+html.md:not(.android) .wrap{max-width:720px;margin:0 auto;padding-bottom:40px}
+html.md:not(.android) body.has-result{padding-bottom:0}
+html.md:not(.android) .drop{border:2px dashed var(--md-outline-variant);border-radius:12px;padding:32px 16px}
+html.md:not(.android) .drop.over{border-color:var(--md-primary);background:var(--md-primary-container)}
+html.md:not(.android) body.has-result .drop{border:0;padding:0;justify-items:start}
+html.md:not(.android) .actions{grid-template-columns:1fr}
+@media (min-width:600px){html.md:not(.android) .actions{display:flex;flex-wrap:wrap} html.md:not(.android) .actions .btn{width:auto}}
+html.md:not(.android) .fab{position:relative;height:48px;min-height:48px;box-shadow:none}
+html.md:not(.android) #saveMsg{left:50%;right:auto;transform:translateX(-50%);width:min(688px,calc(100% - 32px));bottom:24px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 
@@ -181,7 +191,7 @@ html.android footer{font-size:12px;line-height:16px;letter-spacing:.4px;color:va
   });
 })();
 </script>
-<script>if (window.Capacitor?.isNativePlatform?.()) document.documentElement.classList.add("android");</script>
+<script>document.documentElement.classList.add("md"); if (window.Capacitor?.isNativePlatform?.()) document.documentElement.classList.add("android");</script>
 <div class="wrap">
   <header>
     <div class="seal" aria-hidden="true">P7M</div>
